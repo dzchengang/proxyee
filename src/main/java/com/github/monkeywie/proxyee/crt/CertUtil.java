@@ -1,7 +1,13 @@
 package com.github.monkeywie.proxyee.crt;
 
+import cn.hutool.core.codec.Base64Decoder;
+import cn.hutool.core.io.FastByteArrayOutputStream;
+import cn.hutool.core.io.IoUtil;
+
 import java.io.*;
 import java.net.URI;
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.security.*;
@@ -212,6 +218,60 @@ public class CertUtil {
      */
     public static String getCertGenerator() {
         return CertUtilsLoader.getCurrentSelectionGenerator();
+    }
+
+    /**
+     * 获取证书集合
+     * @param publicKey
+     * @return
+     * @throws CertificateException
+     * @throws FileNotFoundException
+     */
+    public static List<X509Certificate> loadCertificateList(String publicKey) throws CertificateException, FileNotFoundException {
+        InputStream inputStream = new ByteArrayInputStream(publicKey.getBytes(StandardCharsets.UTF_8));
+        return loadCertificateList(inputStream);
+    }
+
+    /**
+     * 获取证书集合
+     * @param inputStream
+     * @return
+     * @throws CertificateException
+     * @throws FileNotFoundException
+     */
+    public static List<X509Certificate> loadCertificateList(InputStream inputStream) throws CertificateException, FileNotFoundException {
+        CertificateFactory fact = CertificateFactory.getInstance("X.509");
+        List<X509Certificate> certificateList= (List<X509Certificate>) fact.generateCertificates(inputStream);
+        return certificateList;
+    }
+
+    /**
+     * 真私钥构造
+     * @param inputStream
+     * @param algo
+     * @return
+     * @throws Exception
+     */
+    public static PrivateKey loadPrivateKey(InputStream inputStream, String algo) throws Exception{
+        String privateKey = IoUtil.read(inputStream, Charset.defaultCharset());
+        return loadPrivateKey(privateKey,algo);
+    }
+
+    /**
+     * 真私钥构造
+     * @param privateKey
+     * @param algo
+     * @return
+     * @throws Exception
+     */
+    public static PrivateKey loadPrivateKey(String privateKey, String algo) throws Exception{
+        //openssl pkcs8 -topk8 -inform PEM -outform PEM -in 8061958_sdsoft.topcio.cn.key -out a.key -nocrypt
+        // 获取密钥工厂
+        KeyFactory keyFactory = KeyFactory.getInstance(algo);
+        // 构建密钥规范 进行Base64解码
+        PKCS8EncodedKeySpec spec = new PKCS8EncodedKeySpec(Base64Decoder.decode(privateKey));
+        // 生成私钥
+        return keyFactory.generatePrivate(spec);
     }
 
     public static void main(String[] args) throws Exception {

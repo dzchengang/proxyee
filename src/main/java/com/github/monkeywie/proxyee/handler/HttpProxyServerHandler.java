@@ -1,6 +1,7 @@
 package com.github.monkeywie.proxyee.handler;
 
 import com.github.monkeywie.proxyee.crt.CertPool;
+import com.github.monkeywie.proxyee.crt.CertUtil;
 import com.github.monkeywie.proxyee.exception.HttpProxyExceptionHandle;
 import com.github.monkeywie.proxyee.intercept.HttpProxyIntercept;
 import com.github.monkeywie.proxyee.intercept.HttpProxyInterceptInitializer;
@@ -27,8 +28,11 @@ import io.netty.handler.ssl.SslContextBuilder;
 import io.netty.resolver.NoopAddressResolverGroup;
 import io.netty.util.ReferenceCountUtil;
 
+import java.io.FileInputStream;
 import java.net.InetSocketAddress;
 import java.net.URL;
+import java.security.PrivateKey;
+import java.security.cert.X509Certificate;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -201,8 +205,19 @@ public class HttpProxyServerHandler extends ChannelInboundHandlerAdapter {
             if (getServerConfig().isHandleSsl() && byteBuf.getByte(0) == 22) {// ssl握手
                 getRequestProto().setSsl(true);
                 int port = ((InetSocketAddress) ctx.channel().localAddress()).getPort();
-                SslContext sslCtx = SslContextBuilder
-                        .forServer(getServerConfig().getServerPriKey(), CertPool.getCert(port, getRequestProto().getHost(), getServerConfig())).build();
+
+
+                System.out.println(ctx.channel().localAddress());
+
+               /* List<X509Certificate> certificates = CertUtil.loadCertificateList(new FileInputStream("D:\\test_data\\app\\cert\\7603389_lefuapp.lefuyunma.com.pem"));
+                PrivateKey privateKey = CertUtil.loadPrivateKey(new FileInputStream("D:\\test_data\\app\\cert\\key_out.key"),"RSA");
+                SslContext sslCtx = SslContextBuilder.forServer(privateKey,certificates).build();
+
+             */
+                SslContext sslCtx = SslContextBuilder.forServer(getServerConfig().getServerPriKey(), CertPool.getCert(port, getRequestProto().getHost(), getServerConfig())).build();
+
+
+
                 ctx.pipeline().addFirst("httpCodec", new HttpServerCodec(
                         getServerConfig().getMaxInitialLineLength(),
                         getServerConfig().getMaxHeaderSize(),
